@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rush??? Shoulda Been Here Yesterday!!!</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=VT323&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0f1e;--surface:#111827;--surface2:#1a2438;
+  --accent:#00e5ff;--accent2:#ff6b35;--accent3:#a8ff3e;
+  --text:#e8eaf6;--text2:#8892b0;
+  --lA:#1e88e5;--lB:#7b1fa2;--lC:#e65100;
+}
+/* ── EARTH THEME ── */
+body.theme-earth{
+  --bg:#1a1208;--surface:#2a1e0f;--surface2:#3d2e1a;
+  --accent:#ffb347;--accent2:#e07b54;--accent3:#8db87a;
+  --text:#f0e6d3;--text2:#a89070;
+  --lA:#c07a2a;--lB:#7a4a1e;--lC:#4a7a3a;
+}
+/* ── OCEAN THEME ── */
+body.theme-ocean{
+  --bg:#051520;--surface:#0a2535;--surface2:#0f3448;
+  --accent:#00d4aa;--accent2:#ff7f50;--accent3:#7fdfff;
+  --text:#d0eef5;--text2:#6a9fb5;
+  --lA:#0088cc;--lB:#006699;--lC:#00aaaa;
+}
+/* ── THEME PICKER ── */
+.theme-picker{display:flex;gap:10px;margin-bottom:20px}
+.theme-btn{width:36px;height:36px;border-radius:50%;border:3px solid transparent;cursor:pointer;transition:transform .15s,border-color .15s}
+.theme-btn:hover{transform:scale(1.15)}
+.theme-btn.active{border-color:var(--text)}
+.theme-btn.t-dark{background:radial-gradient(circle at 40% 40%,#1a2438,#0a0f1e)}
+.theme-btn.t-earth{background:radial-gradient(circle at 40% 40%,#3d2e1a,#1a1208)}
+.theme-btn.t-ocean{background:radial-gradient(circle at 40% 40%,#0f3448,#051520)}
+body{background:var(--bg);color:var(--text);font-family:'Space Mono',monospace;height:100vh;overflow:hidden;user-select:none;display:flex;flex-direction:column}
+body:before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;background:repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 1px,transparent 1px 4px);mix-blend-mode:screen;opacity:.35}
+
+/* ── TOPBAR ── */
+#topbar{display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:var(--surface);border-bottom:1px solid rgba(0,229,255,.18);height:50px;flex-shrink:0}
+.tb-title{font-family:'VT323',monospace;font-size:24px;letter-spacing:.08em;color:var(--accent3);text-transform:uppercase;padding:3px 10px;border:2px solid rgba(168,255,62,.28);box-shadow:3px 3px 0 rgba(0,0,0,.18);background:rgba(255,255,255,.03);line-height:1;text-shadow:1px 1px 0 rgba(0,0,0,.28)}
+.timer{font-size:22px;font-weight:700;color:var(--accent3);font-variant-numeric:tabular-nums}
+.timer.urgent{color:#ff4444;animation:pulse .5s infinite alternate}
+@keyframes pulse{from{opacity:1}to{opacity:.4}}
+.phase-lbl{font-size:10px;letter-spacing:.1em;color:var(--text2);text-align:center}
+.score{font-size:11px;color:var(--text2);text-align:right}
+.score b{color:var(--accent)}
+#pbar-wrap{height:3px;background:rgba(255,255,255,.08);flex-shrink:0}
+#pbar{height:100%;background:var(--accent3);transition:width 1s linear;width:100%}
+
+/* ══ MAIN LAYOUT ══ */
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
+
+/* ── ROW 1: BUILDING VIEW (top, taller) ── */
+#bld-zone{flex:4;position:relative;overflow:hidden;background:var(--surface);border-bottom:2px solid rgba(255,255,255,.1);min-height:0}
+#bld-floors{position:absolute;inset:0;display:flex;flex-direction:column-reverse}
+.bld-row{display:flex;align-items:center;border-top:1px solid rgba(255,255,255,.05);flex-shrink:0}
+.bld-row.fl1{background:rgba(0,229,255,.04)}
+.bld-fl-num{width:24px;font-size:8px;color:rgba(255,255,255,.22);text-align:right;padding-right:5px;flex-shrink:0}
+.bld-fl-content{flex:1;height:100%;position:relative;display:flex;align-items:center;gap:3px;padding-left:4px;overflow:hidden;flex-wrap:wrap}
+
+/* delivered badge: emoji + count */
+.del-badge{display:inline-flex;align-items:center;gap:1px;font-size:13px;animation:charArrive .35s cubic-bezier(.34,1.56,.64,1)}
+.del-badge .del-count-lbl{font-size:9px;font-weight:700;color:var(--accent3);background:rgba(168,255,62,.18);border-radius:3px;padding:0 3px;line-height:1.5}
+@keyframes charArrive{from{transform:translateY(-14px) scale(0);opacity:0}to{transform:none;opacity:1}}
+
+/* shafts sit flush right */
+#lift-shafts{position:absolute;top:0;right:0;bottom:0;display:flex;pointer-events:none}
+.shaft-col{position:relative;border-left:1px solid rgba(255,255,255,.08)}
+.lcar{position:absolute;left:4px;right:4px;border-radius:5px;border:2px solid;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:2px;z-index:5;overflow:hidden}
+.lcar.lA{border-color:var(--lA);background:rgba(30,136,229,.2)}
+.lcar.lB{border-color:var(--lB);background:rgba(123,31,162,.2)}
+.lcar.lC{border-color:var(--lC);background:rgba(230,81,0,.2)}
+.lcar.door-open{box-shadow:0 0 10px currentColor}
+.lcar-lbl{font-size:7px;font-weight:700;letter-spacing:.1em}
+.lcar.lA .lcar-lbl{color:var(--lA)}.lcar.lB .lcar-lbl{color:var(--lB)}.lcar.lC .lcar-lbl{color:var(--lC)}
+.lcar-pax{font-size:10px;display:flex;flex-wrap:wrap;justify-content:center;gap:1px;line-height:1}
+.shaft-dot{position:absolute;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,.1)}
+.shaft-dot.lit{background:var(--accent3);box-shadow:0 0 4px var(--accent3)}
+.shaft-range{position:absolute;left:2px;width:3px;border-radius:2px;opacity:.3}
+.shaft-range.lA{background:var(--lA)}.shaft-range.lB{background:var(--lB)}.shaft-range.lC{background:var(--lC)}
+
+/* ── ROW 2: LOBBY (left) + LIFT SLOTS (right) ── */
+#bottom-zone{flex:2;display:flex;overflow:hidden;min-height:0}
+
+/* LOBBY — left column, 50% width */
+#lobby-zone{flex:1;background:var(--surface);border-right:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;overflow:hidden}
+.zone-hdr{padding:5px 10px;font-size:10px;letter-spacing:.12em;color:var(--text2);border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0;display:flex;align-items:center;justify-content:space-between}
+.zone-hdr-hint{font-size:9px;color:var(--text2);opacity:.55}
+#lobby-chars{
+  flex:1;
+  overflow-x:hidden;
+  overflow-y:hidden;
+  padding:6px 8px;
+
+  /* Single-row queue: newest on the left, oldest on the right */
+  display:flex;
+  flex-direction:row;
+  justify-content:flex-end;
+  align-items:center;
+  gap:5px;
+  align-content:center;
+}
+#lobby-chars::-webkit-scrollbar{width:3px}
+#lobby-chars::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1)}
+
+/* ── BIGGER CHAR CARDS (max 6 in lobby) ── */
+.char-card{width:64px;height:76px;background:var(--surface2);border:2px solid rgba(255,255,255,.1);border-radius:6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:4px;position:relative;transition:border-color .15s,transform .1s;flex-shrink:0;animation:cpop .18s ease-out}
+@keyframes cpop{from{transform:scale(0)}to{transform:scale(1)}}
+.char-card:hover{border-color:rgba(0,229,255,.5);transform:scale(1.06)}
+.char-card.sel{border-color:var(--accent);background:rgba(0,229,255,.08)}
+.char-card.wrong-wait{border-color:rgba(255,200,0,.6)!important}
+.floor-badge{position:absolute;top:3px;right:3px;font-size:14px;font-weight:700;background:#e8f5e9;color:#1b5e20;border-radius:4px;padding:2px 5px;line-height:1.4}
+.floor-badge.warn{background:#fff9c4;color:#f57f17}
+.char-body{font-size:30px;line-height:1}
+.char-nm{font-size:7px;color:var(--text2)}
+
+/* LIFT ZONE — right column, 50% width */
+#lift-zone{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+#lift-slots{display:flex;gap:1px;background:rgba(255,255,255,.04);flex:1;min-height:0}
+.lift-slot{flex:1;background:var(--surface);display:flex;flex-direction:column;overflow:hidden;border-right:1px solid rgba(255,255,255,.04);transition:background .3s,opacity .3s}
+.lift-slot:last-child{border-right:none}
+.lift-slot.moving{background:rgba(0,0,0,.45);opacity:.5;pointer-events:none}
+.lift-hdr{padding:5px 8px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0}
+.lift-lbl{display:none}
+.lift-range{font-size:13px;font-weight:700;color:var(--text)}
+.lift-cap{font-size:13px;font-weight:700;color:var(--text2)}
+.lA .lift-range{color:var(--lA)}.lB .lift-range{color:var(--lB)}.lC .lift-range{color:var(--lC)}
+.lift-pass{flex:1;padding:5px;display:flex;flex-wrap:wrap;gap:3px;align-content:flex-start;overflow-y:auto;cursor:pointer}
+.lift-pass::-webkit-scrollbar{width:3px}
+.pass-chip{display:flex;align-items:center;gap:3px;background:var(--surface2);border:1px solid rgba(255,255,255,.1);border-radius:4px;padding:2px 5px;font-size:10px;cursor:pointer;transition:background .12s}
+.pass-chip:hover{background:rgba(255,80,80,.15);border-color:rgba(255,80,80,.4)}
+.pass-chip .fn{color:var(--accent2);font-weight:700}
+.pass-chip .chip-count{font-size:9px;font-weight:700;color:var(--accent3);background:rgba(168,255,62,.15);border-radius:3px;padding:0 3px;line-height:1.5}
+.pass-chip.wrong{border-color:rgba(255,200,0,.45)!important;background:rgba(255,200,0,.07)!important}
+.pass-chip.wrong .fn{color:#ffd600!important}
+#lift-actions{padding:7px 10px;display:flex;gap:6px;border-top:1px solid rgba(255,255,255,.06);flex-shrink:0}
+.send-lift-btn{flex:1;padding:8px 4px;font-family:'Space Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.1em;border:2px solid;cursor:pointer;text-transform:uppercase;transition:all .2s;background:transparent;line-height:1.3}
+#send-btn-0{border-color:var(--lA);color:var(--lA)}
+#send-btn-0:hover:not(:disabled){background:var(--lA);color:#fff}
+#send-btn-1{border-color:var(--lB);color:var(--lB)}
+#send-btn-1:hover:not(:disabled){background:var(--lB);color:#fff}
+#send-btn-2{border-color:var(--lC);color:var(--lC)}
+#send-btn-2:hover:not(:disabled){background:var(--lC);color:#fff}
+.send-lift-btn:disabled{opacity:.25;cursor:not-allowed}
+
+/* ── TITLE SCREEN ── */
+#title-screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);z-index:100;transition:opacity .3s}
+#title-screen.hidden{opacity:0;pointer-events:none}
+.game-title{font-size:clamp(24px,4.6vw,54px);font-weight:700;letter-spacing:.06em;color:var(--accent);text-shadow:3px 0 var(--accent2),-3px 0 var(--accent3),0 0 26px rgba(0,229,255,.55);margin-bottom:.35em;text-align:center;text-transform:uppercase;line-height:1.15;max-width:min(920px,92vw);padding:10px 16px;border:3px solid var(--accent);box-shadow:6px 6px 0 rgba(255,107,53,.65),-6px -6px 0 rgba(168,255,62,.28),0 0 32px rgba(0,229,255,.25);background:linear-gradient(180deg,rgba(0,229,255,.08),rgba(255,255,255,.02));image-rendering:pixelated;position:relative;animation:titleGlitch 1.8s steps(2,end) infinite}
+.game-title:before,.game-title:after{content:attr(data-text);position:absolute;inset:10px 16px;pointer-events:none;overflow:hidden;opacity:.38}
+.game-title:before{color:var(--accent2);transform:translate(3px,0);clip-path:inset(0 0 58% 0)}
+.game-title:after{color:var(--accent3);transform:translate(-3px,0);clip-path:inset(48% 0 0 0)}
+@keyframes titleGlitch{0%,88%,100%{transform:none;filter:none}90%{transform:translate(2px,-1px);filter:contrast(1.25)}92%{transform:translate(-2px,1px)}94%{transform:none}}
+.game-sub{font-size:12px;color:var(--accent3);letter-spacing:.22em;margin-bottom:2.5em;text-shadow:0 0 12px rgba(168,255,62,.35);padding:4px 10px;border-left:4px solid var(--accent2);border-right:4px solid var(--accent2);background:rgba(255,255,255,.035)}
+.btn{padding:11px 32px;border:2px solid var(--accent);background:transparent;color:var(--accent);font-family:'Space Mono',monospace;font-size:13px;letter-spacing:.15em;cursor:pointer;transition:all .2s;text-transform:uppercase}
+.btn:hover{background:var(--accent);color:var(--bg)}
+.btn-g{border-color:var(--accent3);color:var(--accent3)}.btn-g:hover{background:var(--accent3);color:var(--bg)}
+.how-to{margin-top:20px;font-size:11px;color:var(--text2);max-width:360px;text-align:center;line-height:2}
+
+/* ── END OVERLAY ── */
+#end-overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:200;display:flex;align-items:center;justify-content:center}
+#end-overlay.hidden{display:none}
+.end-box{background:var(--surface);border:1px solid rgba(0,229,255,.25);padding:30px 38px;text-align:center;max-width:420px;width:90%}
+.end-title{font-size:26px;font-weight:700;margin-bottom:6px}
+.end-sub{font-size:11px;color:var(--text2);margin-bottom:18px;line-height:1.9}
+.end-stat{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:11px}
+.end-stat:last-of-type{border-bottom:none}
+.end-val{color:var(--accent);font-weight:700}
+.end-big{font-size:48px;font-weight:700;color:var(--accent3);margin:12px 0;line-height:1;text-shadow:0 0 24px rgba(168,255,62,.4)}
+.end-big-lbl{font-size:12px;color:var(--text2);letter-spacing:.2em}
+.end-btns{margin-top:20px;display:flex;gap:10px;justify-content:center}
+
+/* ── DRAG & DROP ── */
+.char-card{cursor:grab}
+.char-card:active{cursor:grabbing}
+.char-card.dragging{opacity:.35;transform:scale(0.92)!important;border-color:var(--accent)!important}
+.lift-pass.drag-over{background:rgba(0,229,255,.10);outline:2px dashed var(--accent);outline-offset:-3px}
+.lift-pass.drag-over-full{background:rgba(255,80,80,.10);outline:2px dashed #ff4444;outline-offset:-3px}
+/* ghost image helper */
+#drag-ghost{position:fixed;pointer-events:none;z-index:9999;opacity:.85;transform:scale(1.1);transition:none}
+
+/* ── +1s BONUS FLOAT ── */
+.bonus-pop{position:fixed;font-family:'Space Mono',monospace;font-size:16px;font-weight:700;color:var(--accent3);pointer-events:none;z-index:400;animation:bonusFly 1.1s ease-out forwards}
+.penalty-pop{position:fixed;font-family:'Space Mono',monospace;font-size:16px;font-weight:700;color:#ff4444;pointer-events:none;z-index:400;animation:bonusFly 1.1s ease-out forwards}
+@keyframes bonusFly{0%{opacity:1;transform:translateY(0) scale(1.2)}100%{opacity:0;transform:translateY(-48px) scale(0.9)}}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:50px;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid rgba(0,229,255,.25);padding:6px 16px;font-size:11px;color:var(--accent);z-index:300;pointer-events:none;opacity:0;transition:opacity .25s;white-space:nowrap}
+#toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- TITLE -->
+<div id="title-screen">
+  <div class="title-panel">
+    <div class="game-title">RUSH!!!</div>
+    <div class="game-tag">Shoulda Been Here Yesterday</div>
+  </div>
+  <div class="game-sub">RETRO RUSH · TIME CHALLENGE</div>
+  <div class="theme-picker">
+    <div class="theme-btn t-dark active" id="tb-dark" onclick="setTheme('dark')" title="Dark"></div>
+    <div class="theme-btn t-earth" id="tb-earth" onclick="setTheme('earth')" title="Earth"></div>
+    <div class="theme-btn t-ocean" id="tb-ocean" onclick="setTheme('ocean')" title="Ocean"></div>
+  </div>
+  <button class="btn" onclick="startGame()">▶ START GAME</button>
+  <div class="how-to">🖱 <b style="color:var(--accent)">ลาก</b>ตัวละครวางลงลิฟต์ หรือ <b style="color:var(--accent)">คลิก</b> → คลิกลิฟต์<br>กด SEND ส่งลิฟต์ขึ้น — ส่งพนักงานให้ได้มากที่สุดภายใน <b style="color:var(--accent3)">1 นาที</b><br><br>🏢 Lobby มีคนใหม่เข้ามาตลอดเวลา | ชั้นรับคนได้ไม่จำกัด</div>
+</div>
+
+<!-- TOPBAR -->
+<div id="topbar">
+  <div class="tb-title">⚡ RUSH MODE</div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:1px">
+    <div class="timer" id="main-timer">0:40</div>
+    <div class="phase-lbl" id="main-phase">ASSIGN PHASE</div>
+  </div>
+  <div class="score">Delivered <b id="del-count">0</b></div>
+</div>
+<div id="pbar-wrap"><div id="pbar"></div></div>
+
+<!-- MAIN -->
+<div id="main">
+
+  <!-- ROW 1: BUILDING VIEW -->
+  <div id="bld-zone">
+    <div id="bld-floors"></div>
+    <div id="lift-shafts"></div>
+  </div>
+
+  <!-- ROW 2: LOBBY + LIFT SLOTS -->
+  <div id="bottom-zone">
+    <div id="lobby-zone">
+      <div class="zone-hdr">
+        <span>🚶 LOBBY FL1 (<span id="lobby-count">0</span>/6)</span>
+        <span class="zone-hdr-hint">ลาก / คลิก → ลิฟต์</span>
+      </div>
+      <div id="lobby-chars"></div>
+    </div>
+
+    <div id="lift-zone">
+      <div id="lift-slots">
+        <div class="lift-slot lA">
+          <div class="lift-hdr"><div><div class="lift-lbl">LIFT A</div><div class="lift-range" id="lr-0"></div></div><div class="lift-cap" id="lc-0">0/4</div></div>
+          <div class="lift-pass" id="lp-0" onclick="liftClick(0)"></div>
+        </div>
+        <div class="lift-slot lB">
+          <div class="lift-hdr"><div><div class="lift-lbl">LIFT B</div><div class="lift-range" id="lr-1"></div></div><div class="lift-cap" id="lc-1">0/4</div></div>
+          <div class="lift-pass" id="lp-1" onclick="liftClick(1)"></div>
+        </div>
+        <div class="lift-slot lC">
+          <div class="lift-hdr"><div><div class="lift-lbl">LIFT C</div><div class="lift-range" id="lr-2"></div></div><div class="lift-cap" id="lc-2">0/4</div></div>
+          <div class="lift-pass" id="lp-2" onclick="liftClick(2)"></div>
+        </div>
+      </div>
+      <div id="lift-actions">
+        <button class="send-lift-btn" id="send-btn-0" onclick="sendOneLift(0)" disabled>SEND</button>
+        <button class="send-lift-btn" id="send-btn-1" onclick="sendOneLift(1)" disabled>SEND</button>
+        <button class="send-lift-btn" id="send-btn-2" onclick="sendOneLift(2)" disabled>SEND</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- END OVERLAY -->
+<div id="end-overlay" class="hidden">
+  <div class="end-box">
+    <div class="end-title" id="end-title">⏱ TIME'S UP!</div>
+    <div class="end-big-lbl">DELIVERED IN 40 SEC</div>
+    <div class="end-big" id="end-big-num">0</div>
+    <div class="end-sub" id="end-sub"></div>
+    <div id="end-stats"></div>
+    <div class="end-btns">
+      <button class="btn btn-g" onclick="startGame()">PLAY AGAIN</button>
+      <button class="btn" onclick="showTitle()">MAIN MENU</button>
+    </div>
+  </div>
+</div>
+<div id="drag-ghost"></div>
+<div id="toast"></div>
+
+<script>
+// ══ CONSTANTS ══
+const TOTAL_FLOORS  = 8;
+const GAME_TIME     = 60;   // 60 seconds
+const MAX_CAP       = 4;    // max in each lift
+const LOBBY_MAX     = 6;    // max in lobby
+const MS_PER_FLOOR  = 650;
+const MS_STOP       = 350;  // 350 + 50 = 400ms per person
+
+// ══ STATE ══
+let CFG=[], chars=[], passengers=[[],[],[]], selChar=null;
+let gTimer=null, timeLeft=GAME_TIME, delivered=0, phase='assign';
+let liftMoving=[false,false,false];
+let nextCharId=0;
+let dragCharId=null;  // id of char being dragged
+let abortGame={cancelled:false};  // abort flag for animLift
+let wrongDelivered=0;  // wrong passengers dropped at cfg.max
+let totalBonusTime=0;  // total seconds gained from successful deliveries
+
+// floor delivery map: floorDelivered[f] = { emoji, count }
+let floorDelivered={};
+
+// ══ UTILS ══
+const rand=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const delay=ms=>new Promise(r=>setTimeout(r,ms));
+const fmtT=s=>`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+
+function genCFG(){
+  const c1=rand(2,4),c2=rand(c1+1,7);
+  return[
+    {min:2,max:c1,label:'A',cls:'lA',color:'var(--lA)'},
+    {min:c1,max:c2,label:'B',cls:'lB',color:'var(--lB)'},
+    {min:c2,max:8, label:'C',cls:'lC',color:'var(--lC)'},
+  ];
+}
+
+const EM_M=['👨‍💼','👨‍💻','🧑‍💼','👨‍🔬','👨‍🏫','👨‍⚕️'];
+const EM_F=['👩‍💼','👩‍💻','🧑‍💼','👩‍🔬','👩‍🏫','👩‍⚕️'];
+const ALL_EM=[...EM_M,...EM_F];
+
+function createChar(){
+  const id=nextCharId++;
+  return{
+    id, floor:rand(2,TOTAL_FLOORS),
+    emoji:ALL_EM[rand(0,ALL_EM.length-1)],
+    name:`E${String(id+1).padStart(2,'0')}`,
+    delivered:false, inLift:-1, waiting:false
+  };
+}
+
+// generate initial lobby of LOBBY_MAX
+function genInitialChars(){
+  const arr=[];
+  for(let i=0;i<LOBBY_MAX;i++) arr.push(createChar());
+  return arr;
+}
+
+// How many chars are currently in lobby (not in lift, not delivered, not wrongDropped)
+function lobbyCount(){
+  return chars.filter(c=>!c.delivered&&!c.wrongDropped&&c.inLift<0).length;
+}
+
+// Refill lobby one person at a time, chained — recheck before every add
+function refillLobby(){
+  if(phase==='end')return;
+  if(lobbyCount()>=LOBBY_MAX)return;
+  const c=createChar();
+  chars.push(c);
+  renderLobby();
+  setTimeout(refillLobby, 180);
+}
+
+// ══ THEME ══
+function setTheme(t){
+  document.body.classList.remove('theme-earth','theme-ocean');
+  if(t==='earth') document.body.classList.add('theme-earth');
+  if(t==='ocean') document.body.classList.add('theme-ocean');
+  document.querySelectorAll('.theme-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(`tb-${t}`).classList.add('active');
+}
+
+// ══ TITLE ══
+function showTitle(){
+  clearInterval(gTimer);
+  document.getElementById('end-overlay').classList.add('hidden');
+  document.getElementById('title-screen').classList.remove('hidden');
+}
+
+// ══ START ══
+function startGame(){
+  document.getElementById('title-screen').classList.add('hidden');
+  nextCharId=0;
+  CFG=genCFG();
+  chars=genInitialChars();
+  passengers=[[],[],[]]; selChar=null;
+  timeLeft=GAME_TIME; delivered=0; phase='assign'; liftMoving=[false,false,false];
+  floorDelivered={};
+  abortGame={cancelled:false};
+  wrongDelivered=0;
+  totalBonusTime=0;
+  document.getElementById('end-overlay').classList.add('hidden');
+  document.getElementById('del-count').textContent=0;
+  CFG.forEach((c,i)=>document.getElementById(`lr-${i}`).textContent=`FL ${c.min}–${c.max}`);
+  document.getElementById('main-timer').textContent=fmtT(60);
+  document.getElementById('main-timer').classList.remove('urgent');
+  document.getElementById('main-phase').textContent='ASSIGN PHASE';
+  document.getElementById('pbar').style.width='100%';
+  renderLobby(); renderLifts(); updateSendBtn();
+  buildBldView();
+  clearInterval(gTimer);
+  gTimer=setInterval(tick,1000);
+}
+
+// ══ TIMER ══
+function tick(){
+  if(phase==='end')return;
+  timeLeft--;
+  const txt=fmtT(timeLeft),urg=timeLeft<=10;
+  document.getElementById('main-timer').textContent=txt;
+  document.getElementById('main-timer').classList.toggle('urgent',urg);
+  document.getElementById('pbar').style.width=(timeLeft/GAME_TIME*100)+'%';
+  if(timeLeft<=0){clearInterval(gTimer);triggerEnd();}
+}
+
+// ══ ASSIGN LOGIC ══
+
+// full rebuild — only for adding/removing cards
+function renderLobby(){
+  const el=document.getElementById('lobby-chars');
+  const existing=new Set([...el.querySelectorAll('.char-card')].map(d=>+d.dataset.cid));
+  const visible=chars.filter(c=>!c.delivered&&!c.wrongDropped&&c.inLift<0);
+  const visibleIds=new Set(visible.map(c=>c.id));
+
+  // remove cards no longer in lobby
+  el.querySelectorAll('.char-card').forEach(d=>{
+    if(!visibleIds.has(+d.dataset.cid)) d.remove();
+  });
+
+  // add new cards
+  visible.forEach(c=>{
+    if(existing.has(c.id)) return; // already in DOM
+    const d=document.createElement('div');
+    d.className='char-card'+(selChar===c.id?' sel':'')+(c.waiting?' wrong-wait':'');
+    d.setAttribute('draggable','true');
+    d.dataset.cid=c.id;
+    d.innerHTML=`<div class="floor-badge${c.waiting?' warn':''}">${c.floor}</div><div class="char-body">${c.emoji}</div><div class="char-nm">${c.name}</div>`;
+    d.onclick=()=>pickChar(c.id);
+    d.addEventListener('dragstart',e=>{
+      if(phase!=='assign'){e.preventDefault();return;}
+      dragCharId=c.id;
+      d.classList.add('dragging');
+      e.dataTransfer.effectAllowed='move';
+      e.dataTransfer.setData('text/plain',String(c.id));
+      const ghost=document.getElementById('drag-ghost');
+      ghost.textContent=c.emoji;
+      ghost.style.cssText=`font-size:32px;left:-200px;top:-200px;display:block`;
+      e.dataTransfer.setDragImage(ghost,16,16);
+    });
+    d.addEventListener('dragend',()=>{
+      d.classList.remove('dragging');
+      dragCharId=null;
+      document.querySelectorAll('.lift-pass').forEach(lp=>{
+        lp.classList.remove('drag-over','drag-over-full');
+      });
+    });
+    el.insertBefore(d, el.firstChild);
+  });
+
+  // update count
+  document.getElementById('lobby-count').textContent=visible.length;
+  // soft-update classes on existing cards (no rebuild)
+  updateLobbyClasses();
+}
+
+// only update sel/wrong-wait classes — no DOM rebuild, no flicker
+function updateLobbyClasses(){
+  document.getElementById('lobby-chars').querySelectorAll('.char-card').forEach(d=>{
+    const cid=+d.dataset.cid;
+    const c=chars.find(x=>x.id===cid); if(!c)return;
+    d.classList.toggle('sel', selChar===cid);
+    d.classList.toggle('wrong-wait', !!c.waiting);
+    const badge=d.querySelector('.floor-badge');
+    if(badge) badge.className='floor-badge'+(c.waiting?' warn':'');
+  });
+}
+
+function renderLifts(){
+  for(let i=0;i<3;i++){
+    const p=document.getElementById(`lp-${i}`); p.innerHTML='';
+    const moving=liftMoving[i];
+    const slot=p.closest('.lift-slot');
+    if(slot) slot.classList.toggle('moving', moving);
+    document.getElementById(`lc-${i}`).textContent=`${passengers[i].length}/${MAX_CAP}`;
+    if(!moving){
+      // group by floor
+      const groups={};
+      passengers[i].forEach(cid=>{
+        const c=chars.find(x=>x.id===cid); if(!c)return;
+        if(!groups[c.floor]) groups[c.floor]={floor:c.floor,cids:[],wrong:c.floor<CFG[i].min||c.floor>CFG[i].max,emoji:c.emoji};
+        groups[c.floor].cids.push(cid);
+      });
+      Object.values(groups).forEach(g=>{
+        const chip=document.createElement('div');
+        chip.className='pass-chip'+(g.wrong?' wrong':'');
+        const countLabel=g.cids.length>1?`<span class="chip-count">x${g.cids.length}</span>`:'';
+        chip.innerHTML=`<span>${g.emoji}</span><span class="fn">${g.floor}</span>${countLabel}`;
+        // tap removes last person added to this floor (LIFO)
+        chip.onclick=e=>{e.stopPropagation(); removePax(g.cids[g.cids.length-1],i);};
+        p.appendChild(chip);
+      });
+    }
+
+    // ── drop zone handlers ──
+    p.ondragover=e=>{
+      if(phase!=='assign'||moving)return;
+      e.preventDefault();
+      const full=passengers[i].length>=MAX_CAP;
+      p.classList.toggle('drag-over',!full);
+      p.classList.toggle('drag-over-full',full);
+      e.dataTransfer.dropEffect=full?'none':'move';
+    };
+    p.ondragleave=e=>{
+      // only clear if leaving the lift-pass itself (not a child)
+      if(!p.contains(e.relatedTarget)){
+        p.classList.remove('drag-over','drag-over-full');
+      }
+    };
+    p.ondrop=e=>{
+      e.preventDefault();
+      p.classList.remove('drag-over','drag-over-full');
+      if(phase!=='assign'||moving)return;
+      const cid=dragCharId!==null?dragCharId:parseInt(e.dataTransfer.getData('text/plain'));
+      if(isNaN(cid))return;
+      dropCharToLift(cid,i);
+    };
+  }
+  updateSendBtn();
+}
+
+function pickChar(id){
+  if(phase!=='assign')return;
+  const c=chars.find(x=>x.id===id);
+  if(!c||c.delivered||c.inLift>=0)return;
+  selChar=(selChar===id)?null:id; updateLobbyClasses();
+  if(selChar!==null) toast(`${c.emoji} FL${c.floor} → คลิกลิฟต์`);
+}
+
+function liftClick(i){
+  if(phase!=='assign')return;
+  if(liftMoving[i]){toast(`LIFT ${CFG[i].label} กำลังเคลื่อนที่ รอให้กลับ FL1 ก่อน`);return;}
+  if(selChar===null){toast('กรุณาเลือกตัวละครก่อน');return;}
+  if(passengers[i].length>=MAX_CAP){toast(`LIFT ${CFG[i].label} เต็ม (${MAX_CAP}/${MAX_CAP})`);return;}
+  const c=chars.find(x=>x.id===selChar); if(!c)return;
+  c.inLift=i; c.waiting=false; passengers[i].push(selChar); selChar=null;
+  renderLobby(); renderLifts();
+}
+
+// called by drag-drop
+function dropCharToLift(cid,i){
+  if(liftMoving[i]){toast(`LIFT ${CFG[i].label} กำลังเคลื่อนที่`);return;}
+  if(passengers[i].length>=MAX_CAP){toast(`LIFT ${CFG[i].label} เต็ม (${MAX_CAP}/${MAX_CAP})`);return;}
+  const c=chars.find(x=>x.id===cid);
+  if(!c||c.delivered||c.inLift>=0)return;
+  c.inLift=i; c.waiting=false; passengers[i].push(cid);
+  if(selChar===cid)selChar=null;
+  renderLobby(); renderLifts();
+}
+
+function removePax(cid,i){
+  if(liftMoving[i])return;
+  if(lobbyCount()>=LOBBY_MAX){toast('Lobby เต็มแล้ว ไม่สามารถนำคนออกได้');return;}
+  passengers[i]=passengers[i].filter(x=>x!==cid);
+  const c=chars.find(x=>x.id===cid); if(c){c.inLift=-1;c.waiting=false;}
+  renderLobby(); renderLifts();
+}
+
+function updateSendBtn(){
+  for(let i=0;i<3;i++){
+    const btn=document.getElementById(`send-btn-${i}`);
+    if(btn) btn.disabled=(passengers[i].length===0||liftMoving[i]||phase==='end');
+  }
+}
+
+// send a single lift
+async function sendOneLift(li){
+  if(liftMoving[li])return;
+  if(passengers[li].length===0){toast(`LIFT ${CFG[li].label} ไม่มีผู้โดยสาร`);return;}
+  liftMoving[li]=true;
+  renderLifts();
+  document.getElementById('main-phase').textContent='LIFT MOVING';
+  const pass=[...passengers[li]];
+  await animLift(li, pass);
+  liftMoving[li]=false;
+  onAnimDone();
+}
+
+// ══ BUILDING VIEW ══
+let FH=0;
+
+function buildBldView(){
+  const zone=document.getElementById('bld-zone');
+  FH=zone.clientHeight/TOTAL_FLOORS;
+
+  const slotWidths=CFG.map((_,i)=>{
+    const slot=document.getElementById(`lp-${i}`)?.closest('.lift-slot');
+    return slot ? slot.getBoundingClientRect().width : zone.clientWidth/3;
+  });
+
+  const bldFloors=document.getElementById('bld-floors'); bldFloors.innerHTML='';
+  const shaftsTotalW=slotWidths.reduce((s,w)=>s+w,0);
+  for(let f=1;f<=TOTAL_FLOORS;f++){
+    const row=document.createElement('div');
+    row.className='bld-row'+(f===1?' fl1':'');
+    row.style.height=FH+'px'; row.id=`fr-${f}`;
+    row.innerHTML=`<div class="bld-fl-num">${f}</div><div class="bld-fl-content" id="fc-${f}" style="margin-right:${shaftsTotalW}px"></div>`;
+    bldFloors.appendChild(row);
+  }
+
+  const shafts=document.getElementById('lift-shafts'); shafts.innerHTML='';
+  CFG.forEach((cfg,i)=>{
+    const w=slotWidths[i];
+    const col=document.createElement('div');
+    col.className='shaft-col'; col.id=`sc-${i}`;
+    col.style.width=w+'px';
+    const br=document.createElement('div');
+    br.className=`shaft-range ${cfg.cls}`;
+    br.style.cssText=`bottom:${(cfg.min-1)*FH}px;height:${(cfg.max-cfg.min+1)*FH}px`;
+    col.appendChild(br);
+    for(let f=2;f<=TOTAL_FLOORS;f++){
+      const dot=document.createElement('div');
+      dot.className='shaft-dot'; dot.id=`dot-${i}-${f}`;
+      dot.style.bottom=(f-1)*FH+FH/2-2+'px';
+      col.appendChild(dot);
+    }
+    const carH=Math.max(FH*0.8,28);
+    const car=document.createElement('div');
+    car.className=`lcar ${cfg.cls}`; car.id=`lcar-${i}`;
+    car.style.cssText=`bottom:3px;height:${carH}px;transition:none`;
+    const paxHtml=passengers[i].map(cid=>{const c=chars.find(x=>x.id===cid);return c?`<span>${c.emoji}</span>`:''}).join('');
+    car.innerHTML=`<div class="lcar-lbl">${cfg.label}</div><div class="lcar-pax" id="cpax-${i}">${paxHtml}</div>`;
+    col.appendChild(car); shafts.appendChild(col);
+  });
+}
+
+function carBottom(floor){return(floor-1)*FH+3;}
+function setCar(li,floor,ms){
+  const car=document.getElementById(`lcar-${li}`); if(!car)return;
+  car.style.transition=ms>0?`bottom ${ms}ms linear`:'none';
+  car.style.bottom=carBottom(floor)+'px';
+}
+function updateCarPax(li){
+  const el=document.getElementById(`cpax-${li}`); if(!el)return;
+  el.innerHTML=passengers[li].map(cid=>{const c=chars.find(x=>x.id===cid);return c?`<span>${c.emoji}</span>`:''}).join('');
+}
+function litDot(li,f,on){const d=document.getElementById(`dot-${li}-${f}`);if(d)d.classList.toggle('lit',on);}
+
+// Place delivered person on floor
+function placeDelivered(c){
+  _rerenderFloor(c.floor);
+}
+
+// ══ ANIMATION ══
+async function animLift(li,pass){
+  const cfg=CFG[li];
+  const correct=pass.filter(cid=>{const c=chars.find(x=>x.id===cid);return c&&c.floor>=cfg.min&&c.floor<=cfg.max});
+  const wrong=pass.filter(cid=>!correct.includes(cid));
+  // topFloor = highest correct stop, but at least cfg.max if there are wrong passengers
+  const correctStops=[...new Set(correct.map(cid=>chars.find(x=>x.id===cid).floor))].sort((a,b)=>a-b);
+  const topFloor=wrong.length>0 ? cfg.max : (correctStops.length>0 ? correctStops[correctStops.length-1] : cfg.max);
+  let cur=1;
+
+  for(let f=2;f<=topFloor;f++){
+    if(abortGame.cancelled){return;}
+    setCar(li,f,MS_PER_FLOOR); litDot(li,f,true);
+    await delay(MS_PER_FLOOR); cur=f;
+    if(abortGame.cancelled){litDot(li,f,false);return;}
+
+    // drop correct passengers at their floor
+    const alighting=correct.filter(cid=>{const c=chars.find(x=>x.id===cid);return c&&c.floor===f;});
+    if(alighting.length>0){
+      const car=document.getElementById(`lcar-${li}`);
+      if(car) car.classList.add('door-open');
+      // combo bonus:
+      // - 1 passenger on a floor = +0s
+      // - 2+ passengers on the same floor = round(1/2 * ((n * 2) - 1)) seconds
+      const bonus=alighting.length<=1 ? 0 : Math.round(0.5*((alighting.length*2)-1));
+      if(bonus>0){
+        timeLeft+=bonus;
+        totalBonusTime+=bonus;
+        showBonus(li,bonus);
+      }
+      for(const cid of alighting){
+        if(abortGame.cancelled){if(car)car.classList.remove('door-open');return;}
+        const c=chars.find(x=>x.id===cid); if(!c)continue;
+        c.delivered=true; c.inLift=-1; delivered++;
+        passengers[li]=passengers[li].filter(x=>x!==cid);
+        updateCarPax(li); placeDelivered(c);
+        document.getElementById('del-count').textContent=delivered;
+        await delay(MS_STOP+50);
+      }
+      if(car) car.classList.remove('door-open');
+      refillLobby();
+      renderLobby();
+    }
+
+    // drop wrong passengers at cfg.max
+    if(f===cfg.max && wrong.length>0){
+      const car=document.getElementById(`lcar-${li}`);
+      if(car) car.classList.add('door-open');
+      for(const cid of wrong){
+        if(abortGame.cancelled){if(car)car.classList.remove('door-open');return;}
+        const c=chars.find(x=>x.id===cid); if(!c)continue;
+        c.inLift=-1; c.waiting=false; c.wrongDropped=true;
+        wrongDelivered++;
+        timeLeft=Math.max(0,timeLeft-2); showPenalty(li);
+        passengers[li]=passengers[li].filter(x=>x!==cid);
+        updateCarPax(li); placeWrong(c,cfg.max);
+        await delay(MS_STOP+50);
+      }
+      if(car) car.classList.remove('door-open');
+      refillLobby();
+    }
+
+    litDot(li,f,false);
+  }
+
+  for(let f=cur-1;f>=1;f--){
+    if(abortGame.cancelled){return;}
+    setCar(li,f,MS_PER_FLOOR);
+    await delay(MS_PER_FLOOR); cur=f;
+  }
+
+  passengers[li]=[];
+  refillLobby();
+}
+
+function onAnimDone(){
+  if(phase==='end')return;
+  if(timeLeft<=0){triggerEnd();return;}
+  document.getElementById('main-phase').textContent='ASSIGN PHASE';
+  renderLobby(); renderLifts(); updateSendBtn();
+}
+
+// ══ END ══
+function triggerEnd(){
+  if(phase==='end')return;
+  phase='end'; clearInterval(gTimer);
+  abortGame.cancelled=true;
+  // 0ms — freeze lifts in place, disable all buttons
+  for(let i=0;i<3;i++){
+    const btn=document.getElementById(`send-btn-${i}`);
+    if(btn) btn.disabled=true;
+  }
+  // 1000ms — pop-up appears (lifts still frozen in last position)
+  setTimeout(()=>{
+    document.getElementById('end-overlay').classList.remove('hidden');
+    document.getElementById('end-title').textContent='⏱ TIME\'S UP!';
+    document.getElementById('end-title').style.color='var(--accent)';
+    document.getElementById('end-big-num').textContent=delivered;
+    document.getElementById('end-sub').textContent=
+      delivered===0?'ยังไม่ได้ส่งใครเลย ลองใหม่อีกครั้ง!':
+      delivered<5?'ดีมากเลย! ลองทำให้ได้มากกว่านี้':
+      delivered<10?'เก่งมาก! คุณทำได้ดีมากเลย 🎉':
+      '🏆 ยอดเยี่ยมมาก! คุณเป็นมือโปร!';
+    document.getElementById('end-stats').innerHTML=`
+      <div class="end-stat"><span>คนที่ส่งสำเร็จ</span><span class="end-val">${delivered} คน</span></div>
+      <div class="end-stat"><span>ส่งผิดชั้น</span><span class="end-val" style="color:#ff6b6b">${wrongDelivered} คน</span></div>
+      <div class="end-stat"><span>คนที่ผ่านมา Lobby</span><span class="end-val">${nextCharId} คน</span></div>
+      <div class="end-stat"><span>เวลาที่ใช้</span><span class="end-val">60s + ${totalBonusTime}s = ${60+totalBonusTime}s</span></div>`;
+  },1000);
+  // 1200ms — snap all moving lifts back to floor 1 (behind popup)
+  setTimeout(()=>{
+    for(let i=0;i<3;i++){
+      if(liftMoving[i]) setCar(i,1,0);
+    }
+  },1200);
+}
+
+// ══ BONUS FLOAT ══
+function showBonus(li, amount=1){
+  const carEl=document.getElementById(`lcar-${li}`);
+  if(!carEl)return;
+  const r=carEl.getBoundingClientRect();
+  const el=document.createElement('div');
+  el.className='bonus-pop';
+  el.textContent=`+${amount}s`;
+  el.style.left=(r.left+r.width/2-16)+'px';
+  el.style.top=(r.top-8)+'px';
+  document.body.appendChild(el);
+  el.addEventListener('animationend',()=>el.remove());
+}
+
+function showPenalty(li){
+  const carEl=document.getElementById(`lcar-${li}`);
+  if(!carEl)return;
+  const r=carEl.getBoundingClientRect();
+  const el=document.createElement('div');
+  el.className='penalty-pop';
+  el.textContent='-2s';
+  el.style.left=(r.left+r.width/2-16)+'px';
+  el.style.top=(r.top-8)+'px';
+  document.body.appendChild(el);
+  el.addEventListener('animationend',()=>el.remove());
+}
+
+const WRONG_EM=['😤','😠','😒','😑','🤬'];
+function placeWrong(c, floor){
+  c.wrongFloor=floor;
+  c.wrongEmoji=WRONG_EM[Math.floor(Math.random()*WRONG_EM.length)];
+  _rerenderFloor(floor);
+}
+
+function _rerenderFloor(floor){
+  const fc=document.getElementById(`fc-${floor}`); if(!fc)return;
+  fc.innerHTML='';
+  // happy delivered
+  const happy=chars.filter(ch=>ch.delivered&&ch.floor===floor);
+  const happyGroups={};
+  happy.forEach(ch=>{happyGroups[ch.emoji]=(happyGroups[ch.emoji]||0)+1;});
+  Object.entries(happyGroups).forEach(([em,cnt])=>{
+    const b=document.createElement('span');
+    b.className='del-badge';
+    b.innerHTML=`<span>${em}</span>${cnt>1?`<span class="del-count-lbl">x${cnt}</span>`:''}`;
+    fc.appendChild(b);
+  });
+  // wrong dropped
+  const wrong=chars.filter(ch=>ch.wrongDropped&&ch.wrongFloor===floor);
+  if(wrong.length>0){
+    const b=document.createElement('span');
+    b.className='del-badge';
+    b.style.opacity='.7';
+    b.innerHTML=`<span>${wrong[0].wrongEmoji||'😤'}</span>${wrong.length>1?`<span class="del-count-lbl" style="color:#ff6b6b">x${wrong.length}</span>`:''}`;
+    fc.appendChild(b);
+  }
+}
+
+// ══ TOAST ══
+let toastT=null;
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove('show'),2200);
+}
+</script>
+</body>
+</html>
